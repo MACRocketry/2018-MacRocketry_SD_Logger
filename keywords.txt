@@ -1,0 +1,5 @@
+MacRocketry_SD_Logger	KEYWORD1
+openFile	KEYWORD2
+writeFile	KEYWORD2
+writeBuffer	KEYWORD2
+maxInt	KEYWORD2
