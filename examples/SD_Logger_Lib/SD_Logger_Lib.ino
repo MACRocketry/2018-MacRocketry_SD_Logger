@@ -42,7 +42,7 @@ class MacRocketry_SD_Logger {
 //End of Header ======================================================================================================
 //Start of Source ====================================================================================================
 #include <Arduino.h>                //Arduino library
-//#include <MacRocketry_SD_Logger.h> //header file
+//#include <MacRocketry_SD_Logger.h>  //header file
 #include <SPI.h>     //SPI library
 #include <SD.h>      //SD card library
 

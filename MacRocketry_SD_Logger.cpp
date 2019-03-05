@@ -1,107 +1,104 @@
 #include <Arduino.h>                //Arduino library
-#include <MacRocketry_SD_Logger.h> //header file
+#include <MacRocketry_SD_Logger.h>  //header file
 #include <SPI.h>     //SPI library
 #include <SD.h>      //SD card library
 
-MacRocketry_SD_Logger::MacRocketry_SD_Logger(){ //constructor
+MacRocketry_SD_Logger::MacRocketry_SD_Logger(void){ //constructor
   init();
-  connectSD = start(); //start
-  connectFile = openNextFile();
+  if (SD.begin(SD_CS_Pin))    //initialize SD
+    connectState |= 0b01;
+  if (openNextFile())         //open file
+    connectState |= 0b10;
 }
 
 MacRocketry_SD_Logger::MacRocketry_SD_Logger(String filePath){ //constructor
   init();
-  connectSD = start(); //start
-  connectFile = openFile(filePath);
+  if (SD.begin(SD_CS_Pin))    //initialize SD
+    connectState |= 0b01;
+  if (openNextFile())         //open file
+    connectState |= 0b10;
+
+  //variables for incremental file
+  numNext = 0;
+
 }
 
-void MacRocketry_SD_Logger::init(){ //initialize variables to null
-  connectSD = false;
-  connectFile = false;
+void MacRocketry_SD_Logger::init(void){ //initialize variables to null
+  connectState = 0b00;
   
-  nextFileNum = 0;
-  maxFileNum = maxInt();
-  currentFileName = "";
-
   //variables for more efficient SD write
   bufferSize = 0;
   bufferAllow = 0;
-  bufferString = "";
-  bufferSubstring = "";
 }
 
-int MacRocketry_SD_Logger::maxInt(){ //just get max int number possible
-  maxFileNum = (1 << (sizeof(int) * 8 - 1) ) - 1; //bit shifting, watch out for signed
-  return maxFileNum;
-}
 
-bool MacRocketry_SD_Logger::openNextFile(){
-  if (connectSD){ //if SD card is connected
-    currentFileName = defaultFileName + String(nextFileNum);
-    while ((SD.exists(currentFileName)) && (nextFileNum < maxFileNum)){
-      nextFileNum++;
-      currentFileName = defaultFileName + String(nextFileNum);
+//getters and setters --------------------------------------------------
+uint16_t MacRocketry_SD_Logger::maxUInt(void){ return 0xffff; } //max 16-bit number
+bool MacRocketry_SD_Logger::getConnectSD(void){ return (connectState & 0b01); }
+bool MacRocketry_SD_Logger::getConnectFile(void){ return (connectState & 0b10); }
+
+//file open function --------------------------------------------------
+bool MacRocketry_SD_Logger::openNextFile(void){
+  if (getConnectSD()){ //if SD card is connected
+    
+    while ( //if file already exist and numNext have not reach max value
+      (SD.exists(String(fileNamePrefix) + String(numNext))) && 
+      (numNext < maxUInt()))
+    {
+      numNext++;
     }
-    if (nextFileNum < maxFileNum){ //if file num does not exceed 1024
-      return openFile(currentFileName);
-    }
+    //if file num does not exceed maxUInt()
+    if (numNext < maxUInt()) return openFile(String(fileNamePrefix) + String(numNext));
   }
   return false; //no SD card
 }
 
-bool MacRocketry_SD_Logger::start(){
-  if (SD.begin(SD_CS_Pin)){
-    return true; //able to connect to SD
-  }
-  return false; //no SD card
-}
 
 bool MacRocketry_SD_Logger::openFile(String filePath){
-  if (connectSD){
-    if (sdFile){ //if current file is open
-      sdFile.close(); //close current file
-      delay(5); //delay 5ms
+  if (getConnectSD()){
+    if (sdFile){        //if current file is open
+      sdFile.close();   //close current file
+      delay(5);         //delay 5ms
     }
-    sdFile = SD.open(filePath, FILE_WRITE); //open new file for write
-    if (sdFile){ //if successful
+    sdFile = SD.open(filePath, FILE_WRITE);   //open new file for write
+    if (sdFile){                              //if successful
       writeFile("start logging...");
-      return true; //open file successfully
+      return true;                            //open file successfully
     }
   }
   return false; //cannot open file
 }
 
+
+//file close function --------------------------------------------------
 bool MacRocketry_SD_Logger::writeFile(String data){
-  if (connectFile){ //if file is open
+  if (getConnectFile()){    //if file is open
     sdFile.println(data);
-    sdFile.flush(); //flush all bytes to SD card
+    sdFile.flush();         //flush all bytes to SD card
     return true;
   }
   return false; //cannot write to file
 }
 
+
 bool MacRocketry_SD_Logger::writeBuffer(String data){
-  if (connectFile){ //if file is open
-    bufferString += data; //append new string
+  if (getConnectFile()){  //if file is open
 
     //calculate available space in buffer
     //String.length() returns length in unsigned int
-    bufferAllow = min(SD_buffer - bufferSize, (int) bufferString.length());
-    bufferSize += bufferAllow; //get current buffer size
-    
-    //pass string with enough space
-    bufferSubstring = bufferString.substring(0, bufferAllow);
-    sdFile.print(bufferSubstring);
+    bufferAllow = min(Write_Buffer - bufferSize, (int16_t)data.length());
+    bufferSize += bufferAllow; //update current buffer size
 
-    if (bufferSize >= SD_buffer){ //if buffer overflow
+    //write string with allowable space
+    sdFile.print(data.substring(0, bufferAllow));
+    if (bufferSize >= Write_Buffer){ //if buffer is full
       sdFile.print("\nbuffered\n");
       sdFile.flush(); //actually record to SD
       bufferSize = 0; //reset buffer
-    }
 
-    //get the rest of string that was unable to pass
-    bufferSubstring = bufferString.substring(bufferAllow);
-    bufferString = bufferSubstring;
+      //write the rest of the data
+      sdFile.print(data.substring(bufferAllow));
+    }
     return true;
   }
   return false;
