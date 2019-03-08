@@ -1,46 +1,39 @@
-#include <Arduino.h>                //Arduino library
 #include <MacRocketry_SD_Logger.h>  //header file
 #include <SPI.h>     //SPI library
 #include <SD.h>      //SD card library
 
 MacRocketry_SD_Logger::MacRocketry_SD_Logger(void){ //constructor
   init();
-  if (SD.begin(SD_CS_Pin))    //initialize SD
-    connectState |= 0b01;
-  if (openNextFile())         //open file
-    connectState |= 0b10;
+  connectSD = SD.begin(SD_CS_Pin);      //initialize SD
+  connectFile = openNextFile();         //open file
 }
 
 MacRocketry_SD_Logger::MacRocketry_SD_Logger(String filePath){ //constructor
   init();
-  if (SD.begin(SD_CS_Pin))    //initialize SD
-    connectState |= 0b01;
-  if (openNextFile())         //open file
-    connectState |= 0b10;
-
-  //variables for incremental file
-  numNext = 0;
+  connectSD = SD.begin(SD_CS_Pin);      //initialize SD
+  connectFile = openFile(filePath);         //open file
 
 }
 
 void MacRocketry_SD_Logger::init(void){ //initialize variables to null
-  connectState = 0b00;
+  connectSD = false;
+  connectFile = false;
   
   //variables for more efficient SD write
   bufferSize = 0;
-  bufferAllow = 0;
 }
 
 
 //getters and setters --------------------------------------------------
 uint16_t MacRocketry_SD_Logger::maxUInt(void){ return 0xffff; } //max 16-bit number
-bool MacRocketry_SD_Logger::getConnectSD(void){ return (connectState & 0b01); }
-bool MacRocketry_SD_Logger::getConnectFile(void){ return (connectState & 0b10); }
+bool MacRocketry_SD_Logger::getConnectSD(void){ return connectSD; }
+bool MacRocketry_SD_Logger::getConnectFile(void){ return connectFile; }
 
 //file open function --------------------------------------------------
 bool MacRocketry_SD_Logger::openNextFile(void){
   if (getConnectSD()){ //if SD card is connected
     
+    uint16_t numNext = 0;
     while ( //if file already exist and numNext have not reach max value
       (SD.exists(String(fileNamePrefix) + String(numNext))) && 
       (numNext < maxUInt()))
@@ -86,7 +79,7 @@ bool MacRocketry_SD_Logger::writeBuffer(String data){
 
     //calculate available space in buffer
     //String.length() returns length in unsigned int
-    bufferAllow = min(Write_Buffer - bufferSize, (int16_t)data.length());
+    int16_t bufferAllow = min(Write_Buffer - bufferSize, (int16_t)data.length());
     bufferSize += bufferAllow; //update current buffer size
 
     //write string with allowable space
@@ -103,3 +96,4 @@ bool MacRocketry_SD_Logger::writeBuffer(String data){
   }
   return false;
 }
+

@@ -1,7 +1,6 @@
 #ifndef MacRocketry_SD_Logger_h //include guard
 #define MacRocketry_SD_Logger_h
 
-#include <Arduino.h>  //Arduino library
 #include <SPI.h>      //SPI library
 #include <SD.h>       //SD card library
 
@@ -24,13 +23,10 @@ class MacRocketry_SD_Logger {
     bool getConnectFile(void);
 
   private:
-    uint8_t connectState;
+    bool connectSD, connectFile;
     File sdFile; //File object for SD
-
-    //for incremental file name
-    uint16_t numNext;
     
-    int16_t bufferSize, bufferAllow;     //buffer up to 512 char
+    int16_t bufferSize;     //buffer up to 512 char
 
     void init();
     bool openNextFile();
