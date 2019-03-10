@@ -1,6 +1,7 @@
 #ifndef MacRocketry_SD_Logger_h //include guard
 #define MacRocketry_SD_Logger_h
 
+#include <Arduino.h>  //include Arduino library
 #include <SPI.h>      //SPI library
 #include <SD.h>       //SD card library
 

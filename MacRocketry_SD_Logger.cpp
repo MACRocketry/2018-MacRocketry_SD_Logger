@@ -1,3 +1,4 @@
+#include <Arduino.h>  //include Arduino library
 #include <MacRocketry_SD_Logger.h>  //header file
 #include <SPI.h>     //SPI library
 #include <SD.h>      //SD card library
@@ -96,4 +97,3 @@ bool MacRocketry_SD_Logger::writeBuffer(String data){
   }
   return false;
 }
-
