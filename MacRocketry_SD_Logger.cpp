@@ -80,7 +80,7 @@ bool MacRocketry_SD_Logger::writeBuffer(String data){
 
     //calculate available space in buffer
     //String.length() returns length in unsigned int
-    int16_t bufferAllow = min(Write_Buffer - bufferSize, (int16_t)data.length());
+    int16_t bufferAllow = min(Write_Buffer - bufferSize, (int)data.length());
     bufferSize += bufferAllow; //update current buffer size
 
     //write string with allowable space
