@@ -9,7 +9,14 @@
 #define SD_CS_Pin 10
 #define fileNamePrefix "file_"
 #define SD_Buffer 512
-#define Write_Buffer (SD_Buffer-16)
+
+//comment out line to not log "bufferred"
+//#define Log_Bufferred
+#ifdef Log_Bufferred
+  #define Write_Buffer (SD_Buffer-16)
+#else
+  #define Write_Buffer (SD_Buffer)
+#endif
 
 class MacRocketry_SD_Logger {
   public:
@@ -126,7 +133,9 @@ bool MacRocketry_SD_Logger::writeBuffer(String data){
     //write string with allowable space
     sdFile.print(data.substring(0, bufferAllow));
     if (bufferSize >= Write_Buffer){ //if buffer is full
+      #ifdef Log_Bufferred
       sdFile.print("\nbuffered\n");
+      #endif
       sdFile.flush(); //actually record to SD
       bufferSize = 0; //reset buffer
 

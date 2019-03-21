@@ -81,17 +81,22 @@ bool MacRocketry_SD_Logger::writeBuffer(String data){
     //calculate available space in buffer
     //String.length() returns length in unsigned int
     int16_t bufferAllow = min(Write_Buffer - bufferSize, (int)data.length());
-    bufferSize += bufferAllow; //update current buffer size
-
+    
     //write string with allowable space
+    bufferSize += bufferAllow; //update current buffer size
     sdFile.print(data.substring(0, bufferAllow));
+    
+    //process when buffer is full
     if (bufferSize >= Write_Buffer){ //if buffer is full
-      sdFile.print("\nbuffered\n");
+      #ifdef Log_Bufferred
+      sdFile.print(Log_Buffer_Word);
+      #endif
       sdFile.flush(); //actually record to SD
-      bufferSize = 0; //reset buffer
-
+      
       //write the rest of the data
-      sdFile.print(data.substring(bufferAllow));
+      String remain = data.substring(bufferAllow);
+      sdFile.print(remain);         //print the rest of data
+      bufferSize = remain.length(); //reset buffer
     }
     return true;
   }
