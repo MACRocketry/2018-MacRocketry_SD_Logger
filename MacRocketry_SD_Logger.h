@@ -8,7 +8,15 @@
 #define SD_CS_Pin 10
 #define fileNamePrefix "file_"
 #define SD_Buffer 512
-#define Write_Buffer (SD_Buffer-16)
+
+//comment out line to not log "bufferred"
+//#define Log_Bufferred
+#ifdef Log_Bufferred
+  #define Log_Buffer_Word "\nbuffered\n"
+  #define Write_Buffer (SD_Buffer-16)
+#else
+  #define Write_Buffer (SD_Buffer-4)
+#endif
 
 class MacRocketry_SD_Logger {
   public:
